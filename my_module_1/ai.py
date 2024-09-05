@@ -24,14 +24,17 @@ class Network(nn.Module):
         self.nb_action = nb_action
         # full connection 1 (input size로부터 30개의 다음 레이어 입력으로)
         self.fc1 = nn.Linear(input_size, 30)
+        self.fc2 = nn.Linear(30, 120)
         # full connection 2 (30개의 입력을 가지고 action 선택)
-        self.fc2 = nn.Linear(30, nb_action)
+        self.fc3 = nn.Linear(120, nb_action)
+        # self.fc3 = nn.Linear(120, nb_action)
 
     # forward 함수 (activation func = relu, state 받아서 fc간 연결)
     def forward(self, state):
         # hidden neuron : state를 입력받아 action(Q value)를 반환해줌
         x = F.relu(self.fc1(state))  # nn.Linear(state, 30)
-        q_values = self.fc2(x)  # nn.Linear(30, x) 
+        x = F.relu(self.fc2(x))  # nn.Linear(state, 30)
+        q_values = self.fc3(x)  # nn.Linear(30, x)
         return q_values
 
 
@@ -56,6 +59,7 @@ class ReplayMemory(object):
 
 # implementing Deep Q learning
 # unsqueeze (신경망을 위한 batch 화), squeeze (신경망 사용 후 되돌리기)
+# DQN은 large scale env에서 s,a에대한 Q를 근사하기 위한 Q세타를 두고, 그때 가중치 세타를 Deep NN 로 학습하는 방법, exp replay
 class Dqn():
     def __init__(self, input_size, nb_action, gamma):
         self.gamma = gamma
@@ -72,9 +76,17 @@ class Dqn():
         # 현재 state로부터 action을 고를 확률 합 = 1
         probs = F.softmax(
             # self.model(Variable(state, volatile=True).to(device)) * 100, dim=-1
-            self.model(Variable(state, volatile=True).to(device)) * 10,
+            self.model(Variable(state, volatile=True).to(device)) * 100,
             dim=-1,
         )
+        # TODO: 난수 하나 만들고 e보다 작으면 softmax값 반전시켜서 e-greedy 만들기
+        # 0과 1 사이의 난수 생성
+        # rand_num = random.random()
+        # epsilon = 0.1
+        # if rand_num < epsilon:
+        #     probs = 1 - probs
+        #     print("probs inversion")
+
         # softmax([1,2,3]) = [0.04, 0.11, 0.85] => softmax([1,2,3]*3 = [0,0.02,0.98])
         action = probs.multinomial(num_samples=1)
         # time.sleep(0.1)
@@ -85,7 +97,9 @@ class Dqn():
         outputs = (
             self.model(batch_state).gather(1, batch_action.unsqueeze(1)).squeeze(1)
         )
-        next_outputs = self.model(batch_next_state).detach().max(1)[0]
+        next_outputs = (
+            self.model(batch_next_state).detach().max(1)[0]
+        )  # s_t+1에서 max q를 가지는 a_t+1을 선택한 경우의 reward 예측 (Q value)
         target = self.gamma * next_outputs + batch_reward.to(device)  # TD target
         td_loss = F.smooth_l1_loss(outputs, target)
         self.optimizer.zero_grad()
@@ -95,8 +109,8 @@ class Dqn():
     # 실제 map에서 t시점에 받아온 정보들로 학습(memory update) 실행, 이번 시점에 고를 action 반환
     def update(self, reward, new_signal):  # 사실상 signal(리스트) = state(torch tensor)
         new_state = torch.Tensor(new_signal).float().unsqueeze(0).to(device)
-        print(new_state)
-        time.sleep(0.4)
+        # print(new_state)
+        # time.sleep(0.4)
         self.memory.push(
             (
                 self.last_state,
@@ -106,9 +120,9 @@ class Dqn():
             )
         )  # 모두 torch tensor여야 함 (unsqueeze), 단순 숫자변수 하나인 action은 longTensor로 만듦
         action = self.select_action(new_state)
-        if len(self.memory.memory) > 100:
+        if len(self.memory.memory) > 500:
             batch_state, batch_next_state, batch_action, batch_reward = (
-                self.memory.sample(100)
+                self.memory.sample(500)
             )
             self.learn(batch_state, batch_next_state, batch_reward, batch_action)
         # 행동을 고르고 sample로 얻은 배치정보들로 MDP S,A,R 업데이트

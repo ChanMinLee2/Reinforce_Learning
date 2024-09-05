@@ -32,7 +32,7 @@ n_points = 0
 length = 0
 
 # Getting our AI, which we call "brain", and that contains our neural network that represents our Q-function
-brain = Dqn(7, 3, 0.9)
+brain = Dqn(8, 3, 0.9)
 # brain = Dqn(5, 3, 0.9)
 action2rotation = [0, 20, -20]
 last_reward = 0
@@ -187,11 +187,17 @@ class Game(Widget):
         xx = goal_x - self.car.x
         yy = goal_y - self.car.y
 
+        print(goal_x, goal_y)
+
         # NN의 성능을 위해서 x, y 좌표값 [0,1] 범위로 정규화
         normalized_x = self.car.x / self.width
         normalized_y = self.car.y / self.height
+        if goal_x > goal_y:
+            goal_boolean = 1
+        else:
+            goal_boolean = 0
         orientation = Vector(*self.car.velocity).angle((xx, yy)) / 180.0
-        print(self.car.x, self.car.y, orientation)
+        # print(self.car.x, self.car.y, orientation)
         last_signal = [
             self.car.signal1,
             self.car.signal2,
@@ -200,6 +206,7 @@ class Game(Widget):
             -orientation,
             normalized_x,
             normalized_y,
+            goal_boolean,
         ]
 
         action = brain.update(last_reward, last_signal)
@@ -216,9 +223,9 @@ class Game(Widget):
             last_reward = -1
         else:  # otherwise
             self.car.velocity = Vector(6, 0).rotate(self.car.angle)
-            last_reward = -0.2
+            last_reward = -0.05
             if distance < last_distance:
-                last_reward = 0.1
+                last_reward = 0.01
 
         if self.car.x < 10:
             self.car.x = 10
