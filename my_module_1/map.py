@@ -1,6 +1,8 @@
 # Self Driving Car
 
 # Importing the libraries
+import math
+import sys
 import time
 from random import randint, random
 
@@ -32,8 +34,8 @@ n_points = 0
 length = 0
 
 # Getting our AI, which we call "brain", and that contains our neural network that represents our Q-function
-brain = Dqn(8, 3, 0.9)
-# brain = Dqn(5, 3, 0.9)
+# brain = Dqn(8, 3, 0.9)
+brain = Dqn(5, 3, 0.9)
 action2rotation = [0, 20, -20]
 last_reward = 0
 scores = []
@@ -86,38 +88,51 @@ class Car(Widget):
         self.sensor1 = Vector(30, 0).rotate(self.angle) + self.pos
         self.sensor2 = Vector(30, 0).rotate((self.angle + 30) % 360) + self.pos
         self.sensor3 = Vector(30, 0).rotate((self.angle - 30) % 360) + self.pos
+
         self.signal1 = (
-            int(
-                np.sum(
-                    sand[
-                        int(self.sensor1_x) - 10 : int(self.sensor1_x) + 10,
-                        int(self.sensor1_y) - 10 : int(self.sensor1_y) + 10,
-                    ]
+            math.ceil(
+                int(
+                    np.sum(
+                        sand[
+                            int(self.sensor1_x) - 10 : int(self.sensor1_x) + 10,
+                            int(self.sensor1_y) - 10 : int(self.sensor1_y) + 10,
+                        ]
+                    )
                 )
+                / 400.0
+                * 10
             )
-            / 400.0
+            / 10
         )
         self.signal2 = (
-            int(
-                np.sum(
-                    sand[
-                        int(self.sensor2_x) - 10 : int(self.sensor2_x) + 10,
-                        int(self.sensor2_y) - 10 : int(self.sensor2_y) + 10,
-                    ]
+            math.ceil(
+                int(
+                    np.sum(
+                        sand[
+                            int(self.sensor2_x) - 10 : int(self.sensor2_x) + 10,
+                            int(self.sensor2_y) - 10 : int(self.sensor2_y) + 10,
+                        ]
+                    )
                 )
+                / 400.0
+                * 10
             )
-            / 400.0
+            / 10
         )
         self.signal3 = (
-            int(
-                np.sum(
-                    sand[
-                        int(self.sensor3_x) - 10 : int(self.sensor3_x) + 10,
-                        int(self.sensor3_y) - 10 : int(self.sensor3_y) + 10,
-                    ]
+            math.ceil(
+                int(
+                    np.sum(
+                        sand[
+                            int(self.sensor3_x) - 10 : int(self.sensor3_x) + 10,
+                            int(self.sensor3_y) - 10 : int(self.sensor3_y) + 10,
+                        ]
+                    )
                 )
+                / 400.0
+                * 10
             )
-            / 400.0
+            / 10
         )
         if (
             self.sensor1_x > longueur - 10
@@ -187,8 +202,6 @@ class Game(Widget):
         xx = goal_x - self.car.x
         yy = goal_y - self.car.y
 
-        print(goal_x, goal_y)
-
         # NN의 성능을 위해서 x, y 좌표값 [0,1] 범위로 정규화
         normalized_x = self.car.x / self.width
         normalized_y = self.car.y / self.height
@@ -196,6 +209,7 @@ class Game(Widget):
             goal_boolean = 1
         else:
             goal_boolean = 0
+        # print(goal_x, goal_y, goal_boolean)
         orientation = Vector(*self.car.velocity).angle((xx, yy)) / 180.0
         # print(self.car.x, self.car.y, orientation)
         last_signal = [
@@ -204,9 +218,9 @@ class Game(Widget):
             self.car.signal3,
             orientation,
             -orientation,
-            normalized_x,
-            normalized_y,
-            goal_boolean,
+            # normalized_x,
+            # normalized_y,
+            # goal_boolean,
         ]
 
         action = brain.update(last_reward, last_signal)
@@ -223,9 +237,9 @@ class Game(Widget):
             last_reward = -1
         else:  # otherwise
             self.car.velocity = Vector(6, 0).rotate(self.car.angle)
-            last_reward = -0.05
+            last_reward = -0.3
             if distance < last_distance:
-                last_reward = 0.01
+                last_reward = 0.2
 
         if self.car.x < 10:
             self.car.x = 10

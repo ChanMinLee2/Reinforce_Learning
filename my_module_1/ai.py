@@ -24,17 +24,16 @@ class Network(nn.Module):
         self.nb_action = nb_action
         # full connection 1 (input size로부터 30개의 다음 레이어 입력으로)
         self.fc1 = nn.Linear(input_size, 30)
-        self.fc2 = nn.Linear(30, 120)
         # full connection 2 (30개의 입력을 가지고 action 선택)
-        self.fc3 = nn.Linear(120, nb_action)
+        self.fc2 = nn.Linear(30, nb_action)
         # self.fc3 = nn.Linear(120, nb_action)
 
     # forward 함수 (activation func = relu, state 받아서 fc간 연결)
     def forward(self, state):
         # hidden neuron : state를 입력받아 action(Q value)를 반환해줌
         x = F.relu(self.fc1(state))  # nn.Linear(state, 30)
-        x = F.relu(self.fc2(x))  # nn.Linear(state, 30)
-        q_values = self.fc3(x)  # nn.Linear(30, x)
+        # x = F.relu(self.fc2(x))  # nn.Linear(state, 30)
+        q_values = self.fc2(x)  # nn.Linear(30, x)
         return q_values
 
 
@@ -120,9 +119,9 @@ class Dqn():
             )
         )  # 모두 torch tensor여야 함 (unsqueeze), 단순 숫자변수 하나인 action은 longTensor로 만듦
         action = self.select_action(new_state)
-        if len(self.memory.memory) > 500:
+        if len(self.memory.memory) > 100:
             batch_state, batch_next_state, batch_action, batch_reward = (
-                self.memory.sample(500)
+                self.memory.sample(100)
             )
             self.learn(batch_state, batch_next_state, batch_reward, batch_action)
         # 행동을 고르고 sample로 얻은 배치정보들로 MDP S,A,R 업데이트
