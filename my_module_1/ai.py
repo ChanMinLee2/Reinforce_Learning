@@ -14,6 +14,7 @@ from torch.autograd import Variable
 # device 설정 (CPU)
 device = torch.device('cpu')
 
+learn_count = 0.001
 
 # NN의 구조 구현
 class Network(nn.Module):
@@ -72,10 +73,12 @@ class Dqn():
         self.nb_action = nb_action  # 여기에서 nb_action을 정의
 
     def select_action(self, state):
+        global learn_count
+        print(learn_count)
         # 현재 state로부터 action을 고를 확률 합 = 1
         probs = F.softmax(
             # self.model(Variable(state, volatile=True).to(device)) * 100, dim=-1
-            self.model(Variable(state, volatile=True).to(device)) * 100,
+            self.model(Variable(state, volatile=True).to(device)) * learn_count,
             dim=-1,
         )
         # TODO: 난수 하나 만들고 e보다 작으면 softmax값 반전시켜서 e-greedy 만들기
@@ -93,6 +96,8 @@ class Dqn():
 
     # 배치 정보들을 받아서 loss를 찾아 optimizing함
     def learn(self, batch_state, batch_next_state, batch_reward, batch_action):
+        global learn_count
+        learn_count += 0.0005
         outputs = (
             self.model(batch_state).gather(1, batch_action.unsqueeze(1)).squeeze(1)
         )

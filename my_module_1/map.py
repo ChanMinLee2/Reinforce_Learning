@@ -82,9 +82,10 @@ class Car(Widget):
     signal3 = NumericProperty(0)
 
     def move(self, rotation):
+        # print("move")
         self.pos = Vector(*self.velocity) + self.pos
         self.rotation = rotation
-        self.angle = self.angle + self.rotation
+        self.angle = self.angle = (self.angle + self.rotation) % 360
         self.sensor1 = Vector(30, 0).rotate(self.angle) + self.pos
         self.sensor2 = Vector(30, 0).rotate((self.angle + 30) % 360) + self.pos
         self.sensor3 = Vector(30, 0).rotate((self.angle - 30) % 360) + self.pos
@@ -184,7 +185,7 @@ class Game(Widget):
         self.car.velocity = Vector(6, 0)
 
     def update(self, dt):
-
+        # print("update")
         global brain
         global last_reward
         global scores
@@ -209,9 +210,8 @@ class Game(Widget):
             goal_boolean = 1
         else:
             goal_boolean = 0
-        # print(goal_x, goal_y, goal_boolean)
         orientation = Vector(*self.car.velocity).angle((xx, yy)) / 180.0
-        # print(self.car.x, self.car.y, orientation)
+        # orientation = Vector(*self.car.velocity).signed_angle((xx, yy)) / 180.0
         last_signal = [
             self.car.signal1,
             self.car.signal2,
@@ -222,6 +222,7 @@ class Game(Widget):
             # normalized_y,
             # goal_boolean,
         ]
+        # print(Vector(*self.car.velocity).angle((xx, yy)), orientation)
 
         action = brain.update(last_reward, last_signal)
         scores.append(brain.score())
@@ -239,7 +240,8 @@ class Game(Widget):
             self.car.velocity = Vector(6, 0).rotate(self.car.angle)
             last_reward = -0.3
             if distance < last_distance:
-                last_reward = 0.2
+                last_reward = 0.2 * (-(distance - last_distance)) / 6.0
+                print(last_reward)
 
         if self.car.x < 10:
             self.car.x = 10
