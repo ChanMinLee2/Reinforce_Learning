@@ -74,7 +74,6 @@ class Dqn():
 
     def select_action(self, state):
         global learn_count
-        print(learn_count)
         # 현재 state로부터 action을 고를 확률 합 = 1
         probs = F.softmax(
             # self.model(Variable(state, volatile=True).to(device)) * 100, dim=-1
@@ -97,7 +96,7 @@ class Dqn():
     # 배치 정보들을 받아서 loss를 찾아 optimizing함
     def learn(self, batch_state, batch_next_state, batch_reward, batch_action):
         global learn_count
-        learn_count += 0.0005
+        learn_count += 0.0002
         outputs = (
             self.model(batch_state).gather(1, batch_action.unsqueeze(1)).squeeze(1)
         )
@@ -113,8 +112,6 @@ class Dqn():
     # 실제 map에서 t시점에 받아온 정보들로 학습(memory update) 실행, 이번 시점에 고를 action 반환
     def update(self, reward, new_signal):  # 사실상 signal(리스트) = state(torch tensor)
         new_state = torch.Tensor(new_signal).float().unsqueeze(0).to(device)
-        # print(new_state)
-        # time.sleep(0.4)
         self.memory.push(
             (
                 self.last_state,
@@ -123,13 +120,23 @@ class Dqn():
                 torch.Tensor([self.last_reward]).to(device),
             )
         )  # 모두 torch tensor여야 함 (unsqueeze), 단순 숫자변수 하나인 action은 longTensor로 만듦
+        # push 대신 바로 last_state, new_state, last_action, last_reward를 사용하여 학습
+        batch_state = self.last_state
+        batch_next_state = new_state
+        batch_action = torch.LongTensor([int(self.last_action)]).to(device)
+        batch_reward = torch.Tensor([self.last_reward]).to(device)
+
+        # # 메모리 리플레이 없이 바로 learn 함수 호출
+        # self.learn(batch_state, batch_next_state, batch_reward, batch_action)
+
+        # 행동을 고르고 sample로 얻은 배치정보들로 MDP S,A,R 업데이트
         action = self.select_action(new_state)
         if len(self.memory.memory) > 100:
             batch_state, batch_next_state, batch_action, batch_reward = (
                 self.memory.sample(100)
             )
             self.learn(batch_state, batch_next_state, batch_reward, batch_action)
-        # 행동을 고르고 sample로 얻은 배치정보들로 MDP S,A,R 업데이트
+
         self.last_action = action
         self.last_state = new_state
         self.last_reward = reward

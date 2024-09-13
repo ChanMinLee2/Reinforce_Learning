@@ -43,6 +43,9 @@ scores = []
 # Initializing the map
 first_update = True
 
+# 추가
+sand_count = 0
+
 
 def init():
     global sand
@@ -194,6 +197,8 @@ class Game(Widget):
         global goal_y
         global longueur
         global largeur
+        # 추가
+        global sand_count
 
         longueur = self.width
         largeur = self.height
@@ -235,13 +240,16 @@ class Game(Widget):
 
         if sand[int(self.car.x), int(self.car.y)] > 0:
             self.car.velocity = Vector(1, 0).rotate(self.car.angle)
+            # sand_count += 1
+            # print("sand count", sand_count)
             last_reward = -1
+            # last_reward = -1 - 0.01 * sand_count
         else:  # otherwise
             self.car.velocity = Vector(6, 0).rotate(self.car.angle)
             last_reward = -0.3
             if distance < last_distance:
                 last_reward = 0.2 * (-(distance - last_distance)) / 6.0
-                print(last_reward)
+                print("last Reward", last_reward)
 
         if self.car.x < 10:
             self.car.x = 10
