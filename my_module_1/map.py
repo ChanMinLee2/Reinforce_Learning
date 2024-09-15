@@ -27,9 +27,9 @@ from ai import Dqn
 # Adding this line if we don't want the right click to put a red point
 Config.set("input", "mouse", "mouse,multitouch_on_demand")
 
-# 창 크기를 설정 (1450 x 1050)
-Config.set("graphics", "width", "1450")
-Config.set("graphics", "height", "1050")
+# 창 크기를 설정 (1450 x 1050) - server 컴퓨터에서만
+# Config.set("graphics", "width", "1400")
+# Config.set("graphics", "height", "1050")
 
 # Introducing last_x and last_y, used to keep the last point in memory when we draw the sand on the map
 last_x = 0
