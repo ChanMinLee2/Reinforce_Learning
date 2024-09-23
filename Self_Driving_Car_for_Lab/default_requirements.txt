@@ -1,0 +1,2 @@
+conda install -c peterjc123 pytorch-cpu
+conda install -c conda-forge kivy
